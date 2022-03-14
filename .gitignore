@@ -6,3 +6,5 @@ vars.tfvars
 *.tfstate
 *.tfstate.*
 .terraform.*
+vault.key
+**/client_conf

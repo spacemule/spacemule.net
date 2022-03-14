@@ -3,7 +3,7 @@
 # https://dev.to/tangramvision/exploring-ansible-via-setting-up-a-wireguard-vpn-3389
 # Adapted for modern distros using firewalld
 - name: setup vpn server
-  hosts: wireguard
+  hosts: "{{ target }}"
   become: yes
   become_user: root
   tasks:
@@ -85,7 +85,7 @@
   tasks:
   - name: create client wireguard config
     template:
-      dest: ./client_conf/{{ item.name }}.conf
+      dest: ./client_conf/{{ output_dir }}/{{ item.name }}.conf
       src: client.conf.j2
       owner: 1000
       group: 1000

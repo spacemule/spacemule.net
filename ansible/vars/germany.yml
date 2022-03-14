@@ -1,4 +1,6 @@
 ---
+output_dir: germany
+target: germany
 server_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   32373634313736343965333865663634323038343537346335656234613939643532393861306534
@@ -9,7 +11,6 @@ server_key: !vault |
   3264653238383562613339356436303564666464626163333361
 server_pubkey: QgfLMqZW8j2dCR0kIkaohRUeU0WNeWBA5evniAHLc3g=
 server_port: 51820
-# due to my
 endpoint: 65.108.91.184
 wireguard_net: 10.10.10.1/24
 wireguard_exposed_nets: 0.0.0.0/0
