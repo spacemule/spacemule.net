@@ -1,4 +1,7 @@
 ---
+# Code here strongly based on:
+# https://dev.to/tangramvision/exploring-ansible-via-setting-up-a-wireguard-vpn-3389
+# Adapted for modern distros using firewalld
 - name: setup vpn server
   hosts: wireguard
   become: yes
