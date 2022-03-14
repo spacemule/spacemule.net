@@ -1,0 +1,8 @@
+ansible/client_conf
+.terraform
+vars.tfvars
+*.tfvars
+.idea
+*.tfstate
+*.tfstate.*
+.terraform.*

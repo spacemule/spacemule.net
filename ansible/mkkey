@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -eo pipefail
+
+key=$(wg genkey)
+pubkey=$(echo -n $key | wg pubkey)
+key=$(echo -n $key | ansible-vault encrypt_string --vault-password-file=./client_conf/vault.key)
+psk=$(wg genpsk | ansible-vault encrypt_string --vault-password-file=./client_conf/vault.key)
+
+cat << EOF
+  - name: $1
+    public_key: $pubkey
+    key: $key
+    psk: $psk
+    ip: 10.10.10.XXX
+    port: 51280
+EOF
+
+exit 0
