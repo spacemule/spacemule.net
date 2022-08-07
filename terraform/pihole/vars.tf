@@ -3,7 +3,7 @@ variable "pihole_key" {
   description = "Pihole API key"
 }
 
-variable "pihole2_key" {
-  type = string
-  description = "Pihole API key for second server"
-}
+#variable "pihole2_key" {
+#  type = string
+#  description = "Pihole API key for second server"
+#}

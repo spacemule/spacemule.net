@@ -1,4 +1,5 @@
 ---
+###TODO: Add masquerade on wg zone
 # Code here strongly based on:
 # https://dev.to/tangramvision/exploring-ansible-via-setting-up-a-wireguard-vpn-3389
 # Adapted for modern distros using firewalld
@@ -6,25 +7,67 @@
   hosts: "{{ target }}"
   become: yes
   become_user: root
+  gather_facts: no
   tasks:
   - name: load wireguard module
     community.general.modprobe:
       name: wireguard
       state: present
 
-  - name: open firewall
+  - name: Install wq-quick
+    community.general.zypper:
+      name:
+        - wireguard-tools
+        - firewalld
+      state: present
+    register: installed
+
+  - name: reboot if change
+    ansible.builtin.reboot:
+    when: installed.changed
+
+  - name: enable firewalld
+    ansible.builtin.systemd:
+      name: firewalld
+      state: started
+      enabled: yes
+
+  - name: add iface to zone
     ansible.posix.firewalld:
-      port: "{{ server_port }}/udp"
-      permanent: no
+      interface: "{{ item.iface }}"
+      zone: "{{ item.zone }}"
+      permanent: yes
+      immediate: yes
       state: enabled
-      zone: "{{ firewall_zone }}"
+    when: additional_zones is defined
+    loop: "{{ additional_zones }}"
+
+  - name: open additional ports
+    ansible.posix.firewalld:
+      zone: "{{ item.zone }}"
+      permanent: yes
+      immediate: yes
+      state: enabled
+      port: "{{ item.port }}/{{ item.proto }}"
+    when: additional_ports is defined
+    loop: "{{ additional_ports }}"
 
   - name: persist firewall
     ansible.posix.firewalld:
       port: "{{ server_port }}/udp"
       permanent: yes
       state: enabled
-      zone: "{{ firewall_zone }}"
+      zone: "{{ item }}"
+      immediate: yes
+    loop: '{{ inbound_firewall_zones }}'
+
+  - name: create wireguard directory
+    file:
+      state: directory
+      path: /etc/wireguard
+      mode: '0700'
+      owner: root
+      group: root
 
   # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/copy_module.html
   - name: create server wireguard config
@@ -47,37 +90,21 @@
   # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.html
   - name: start wireguard and enable on boot
     systemd:
+      daemon_reload: yes
       name: wg-quick@wg{{ network_number }}
       enabled: yes
-      state: reloaded
-
-  - name: move wg to firewall zone
-    ansible.posix.firewalld:
-      zone: "{{ firewall_zone }}"
-      interface: wg{{ network_number }}
-      permanent: no
-      state: enabled
+      state: restarted
 
   - name: persist move wg to firewall zone
     ansible.posix.firewalld:
-      zone: "{{ firewall_zone }}"
+      zone: "{{ wg_firewall_zone }}"
       interface: wg{{ network_number }}
       permanent: yes
       state: enabled
+      immediate: yes
 
-  - name: enable masquerade
-    ansible.posix.firewalld:
-      masquerade: yes
-      state: enabled
-      zone: "{{ firewall_zone }}"
-      permanent: no
-
-  - name: persist masquerade
-    ansible.posix.firewalld:
-      masquerade: yes
-      state: enabled
-      zone: "{{ firewall_zone }}"
-      permanent: yes
+  - name: forward within zone
+    ansible.builtin.shell: firewall-cmd --zone={{ wg_firewall_zone }} --add-forward && firewall-cmd --zone={{ wg_firewall_zone }} --add-forward --permanent
 
 - name: setup vpn clients
   hosts: localhost
